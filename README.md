@@ -10,7 +10,7 @@
   <details>
     <summary>Table of Contents</summary>
     <ol>
-      <li><a href="#about-the-project">About The Project</a></li>
+      <li><a href="#about">About The Project</a></li>
       <li><a href="#built-with">Built With</a></li>
       <li><a href="#getting-started-and-assumptions">Getting Started and Assumptions</a></li>
       <li><a href="#prerequisites">Prerequisites</a></li>
@@ -59,17 +59,27 @@ This project listens to a webhook from github, sent on push(es) to an Amazon Web
 Once your ec2 instance (t2.medium) is up and running, this user data script of commands will install jenkins, git, docker, give permissions for jenkins to use docker:
   ```sh
   sudo yum update –y
+  sudo yum install -y yum-utils
   sudo wget -O /etc/yum.repos.d/jenkins.repo \
-    https://pkg.jenkins.io/redhat-stable/jenkins.repo
+    https://pkg.jenkins.io/redhat-stable/jenkins.repo -y
   sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+  sudo yum upgrade -y
   sudo yum upgrade
-  sudo amazon-linux-extras install java-openjdk11 -y
+  # Add required dependencies for the jenkins package
+  sudo yum install java-11-openjdk -y
   sudo yum install jenkins -y
+  sudo systemctl daemon-reload
   sudo systemctl enable jenkins
   sudo systemctl start jenkins
   sudo yum install git -y
-  sudo yum install docker -y
+  sudo yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo
+  sudo yum install docker-ce docker-ce-cli containerd.io -y
+  sudo systemctl start docker
+  sudo systemctl enable docker.service
   sudo usermod -a -G docker jenkins
+  sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 
   ```
 
@@ -105,14 +115,16 @@ The user account permissions used were maximal to get the target setup. Please d
 
 2. Set this repository up with a webhook of your jenkins url with the addition of '/github-webhook/'. Reference https://hevodata.com/learn/jenkins-github-webhook/
 
-3. On your AWS IAM dashboard navigate to the user you set up with the custom JSON access policy in step 1 above. Then, in that user's section entitled 'security credentials', click 'create access key'. This will generate a key specific to this user for this use case. Do not lose it, and keep it somewhere safe.
+3. On your AWS IAM dashboard navigate to the user you set up with the custom JSON access policy in step 1 above. Then, in that user's section entitled 'security credentials', click 'create access key'. This will generate a key specific to this user for this use case. Do not lose it, and keep it somewhere safe. 
+
+export AWS_PROFILE=user
 
 4. SSH back into your jenkins instance and in the command line, type 'aws configure'. In the following fields, fill in the user account we just created access keys for above in step 3. This will give your instance permissions to access and remote into your soon-to-exist EKS cluster.
 
 5. Finally, create your EKS cluster using the following commands from the command line of the ec2 instance that jenkins is running on. 
   ```sh
-  eksctl create cluster --name ERMS-project2 --version 1.22 --region us-east-2 --nodegroup-name linux-nodes --node-type t2.micro --nodes 1
-  aws eks --region us-east-2 update-kubeconfig --name ERMS-project2
+  eksctl create cluster --name pipeline-project --version 1.22 --region us-east-1 --nodegroup-name linux-nodes --node-type t2.micro --nodes 1
+  aws eks --region us-east-1 update-kubeconfig --name pipeline-project
   kubectl get all
   ```
 
