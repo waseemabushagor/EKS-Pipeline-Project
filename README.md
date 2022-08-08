@@ -30,7 +30,7 @@
 [![Product Name Screen Shot][product-screenshot]](https://github.com/waseemabushagor/pipeline/blob/master/images/screenshot.PNG)
 
 Key Concepts:
-* This project uses a CI/CD pipeline which extensively focuses on code quality.
+* This project uses a CI/CD pipeline which extensively focuses on code quality
 * This project leverages the power of ec2(s) and EKS to support the long-term viability of the deployment.
 * This project has a blue/green deployment strategy which focuses on a clean, clear, and consistent user experience without hindering development.
 
